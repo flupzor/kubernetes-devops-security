@@ -10,7 +10,7 @@ pipeline {
       }
     }
 
-    stage('Unit Tests - JUnit and Jacoco') {
+    stage('Unit Tests - JUnit and JaCoCo') {
       steps {
         sh "mvn test"
       }
@@ -28,6 +28,15 @@ pipeline {
           sh 'printenv'
           sh 'docker build -t flupzor/devsecops:""$GIT_COMMIT"" .'
           sh 'docker push flupzor/devsecops:""$GIT_COMMIT""'
+        }
+      }
+    }
+
+    stage('Kubernetes Deployment - DEV') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh "sed -i 's#replace#flupzor/devsecops:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
+          sh "kubectl apply -f k8s_deployment_service.yaml"
         }
       }
     }
